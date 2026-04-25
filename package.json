@@ -1,19 +1,47 @@
 {
-  "name": "the-compass-iron-core",
+  "name": "the-compass",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:setup": "npm run db:migrate && npm run auth:migrate && npm run db:seed",
+    "db:reset": "tsx scripts/reset-db.ts && npm run db:setup",
+    "auth:migrate": "npx auth@1.6.9 migrate --config ./src/lib/server/auth.ts"
   },
   "dependencies": {
-    "drizzle-orm": "^0.44.2",
-    "zod": "^3.24.1"
+    "@sveltejs/adapter-auto": "^7.0.0",
+    "@tailwindcss/vite": "^4.1.15",
+    "better-auth": "^1.6.2",
+    "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
+    "drizzle-orm": "^0.45.2",
+    "pg": "^8.16.3",
+    "svelte": "^5.39.6",
+    "tailwind-merge": "^3.3.1",
+    "tailwind-variants": "^3.1.1",
+    "tailwindcss": "^4.1.15",
+    "tw-animate-css": "^1.4.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@sveltejs/kit": "^2.58.0",
+    "@sveltejs/vite-plugin-svelte": "^7.0.0",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.6",
+    "drizzle-kit": "^0.31.7",
+    "svelte-check": "^4.3.3",
+    "tsx": "^4.20.6",
     "typescript": "^5.8.3",
-    "vitest": "^3.2.4"
+    "vite": "^8.0.10",
+    "vitest": "^4.1.5"
   }
 }

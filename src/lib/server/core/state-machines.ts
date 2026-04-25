@@ -131,7 +131,7 @@ export interface ForceCloseResolution {
 }
 
 export function resolveForceCloseState(state: KpiCycleState): ForceCloseResolution {
-  if (state === "APPROVED" || state === "LOCKED") {
+  if (state === "APPROVED" || state === "LOCKED" || state === "CANCELLED_BY_SYSTEM") {
     throw createAppError("IMMUTABILITY_VIOLATION");
   }
 
@@ -140,10 +140,6 @@ export function resolveForceCloseState(state: KpiCycleState): ForceCloseResoluti
   }
 
   if (state === "SUBMITTED" || state === "REJECTED") {
-    return { resultingState: "CANCELLED_BY_SYSTEM", forceClosed: true, actualValue: null };
-  }
-
-  if (state === "CANCELLED_BY_SYSTEM") {
     return { resultingState: "CANCELLED_BY_SYSTEM", forceClosed: true, actualValue: null };
   }
 

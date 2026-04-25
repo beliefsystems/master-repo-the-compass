@@ -1,6 +1,6 @@
 /**
  * PURPOSE: Define reusable shared TypeScript contracts spanning schema JSON payloads and calculation IO.
- * CONNECTIONS: Imported by calc, validation, errors, and schema modules; re-exported via src/lib/shared/index.ts.
+ * CONNECTIONS: Imported by calc, validation, errors, and schema modules; re-exported via src/lib/shared/types/index.ts.
  * LAYER: Shared Types
  * SSOT REFERENCES: Part 24.2, Part 24.10, Part 24.15, Part 24.16, Part 26
  * CONSTRAINTS ENFORCED: Avoid duplicate ad hoc JSON shapes and loose calculation payloads.

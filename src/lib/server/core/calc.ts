@@ -158,11 +158,11 @@ export function computeMappedObjectivePercent(input: ObjectiveRollupInput, exclu
 export function computeOem(objectives: WeightedPercentInput[], forceClosed = false): number | null {
   const includedObjectives = objectives.filter((objective) => objective.percent !== null);
   if (includedObjectives.length === 0) {
+    // SSoT §26.6: force-closed month with all-NULL objectives → OEM = null, included in cadence denominator
     return null;
   }
 
-  const result = objectives.reduce((sum, objective) => sum + ((objective.percent ?? 0) * objective.weightage) / 100, 0);
-  return forceClosed && includedObjectives.length === 0 ? null : result;
+  return objectives.reduce((sum, objective) => sum + ((objective.percent ?? 0) * objective.weightage) / 100, 0);
 }
 
 function computeDerivedCadence(months: ForceClosedMonthInput[]): number | null {
@@ -202,14 +202,28 @@ export function autoSplitWeights(count: number): number[] {
   return allWeights;
 }
 
-export function deriveKpiStatus(score: number | null, bands: KpiStatusBands = DEFAULT_KPI_STATUS_BANDS): keyof KpiStatusBands | "not_started" {
+export function deriveKpiStatus(
+  score: number | null,
+  bands: KpiStatusBands = DEFAULT_KPI_STATUS_BANDS
+): "NOT_STARTED" | "AT_RISK" | "OFF_TRACK" | "ON_TRACK" | "ACHIEVED" {
   if (score === null) {
-    return "not_started";
+    return "NOT_STARTED";
   }
 
   const orderedBands = Object.entries(bands).sort(([, a], [, b]) => a.min - b.min);
   const matched = orderedBands.find(([, band]) => score >= band.min && (band.max === null || score <= band.max));
-  return matched?.[0] as keyof KpiStatusBands | "not_started";
+  switch (matched?.[0]) {
+    case "at_risk":
+      return "AT_RISK";
+    case "off_track":
+      return "OFF_TRACK";
+    case "on_track":
+      return "ON_TRACK";
+    case "achieved":
+      return "ACHIEVED";
+    default:
+      return "NOT_STARTED";
+  }
 }
 
 export function derivePmsRating(score: number | null, bands: PmsRatingBands = [...DEFAULT_PMS_RATING_BANDS]): string | null {

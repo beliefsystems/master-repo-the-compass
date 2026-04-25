@@ -6,24 +6,21 @@
  * CONSTRAINTS ENFORCED: Client never sends organisation_id, derived cadences are read-only, no service-layer cross-record logic.
  */
 import { z } from "zod";
-import { EXPORT_FORMATS, KPI_METRIC_TYPES, KPI_TARGET_TYPES, REVIEW_SENTIMENTS, SCORE_CADENCES } from "../constants.js";
-import { createAppError, ValidationAppError } from "../errors.js";
+import { EXPORT_FORMATS, KPI_METRIC_TYPES, KPI_TARGET_TYPES, REVIEW_SENTIMENTS, SCORE_CADENCES } from "../core/constants.js";
+import { createAppError, ValidationAppError } from "../core/errors.js";
 import {
   approvalActionSchema,
   commentSchema,
   fiscalYearSchema,
-  halfPeriodSchema,
   monthSchema,
   organisationConfigEntitySchema,
-  quarterPeriodSchema,
   reasonSchema,
   reviewPeriodSchema,
-  reviewSentimentSchema,
-  userEntitySchema,
   uuidSchema,
+  userEntitySchema,
   versionSchema
 } from "./entities.js";
-import { assertWritableCadence } from "../fiscal.js";
+import { assertWritableCadence } from "../core/fiscal.js";
 
 const timelineCoreSchema = z.object({
   start_date: z.string().date(),
@@ -33,27 +30,27 @@ const timelineCoreSchema = z.object({
 });
 
 export const kpiTimelineRequestSchema = timelineCoreSchema.superRefine((value, ctx) => {
-    const start = new Date(`${value.start_date}T00:00:00.000Z`);
-    const end = new Date(`${value.end_date}T00:00:00.000Z`);
-    const days = Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
+  const start = new Date(`${value.start_date}T00:00:00.000Z`);
+  const end = new Date(`${value.end_date}T00:00:00.000Z`);
+  const days = Math.floor((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1;
 
-    if (end < start) {
-      ctx.addIssue({ code: "custom", path: ["end_date"], message: "End date must be on or after start date." });
-      return;
-    }
+  if (end < start) {
+    ctx.addIssue({ code: "custom", path: ["end_date"], message: "End date must be on or after start date." });
+    return;
+  }
 
-    if (start.getUTCMonth() !== end.getUTCMonth() || start.getUTCFullYear() !== end.getUTCFullYear()) {
-      ctx.addIssue({ code: "custom", path: ["end_date"], message: "Timeline cannot span multiple months." });
-    }
+  if (start.getUTCMonth() !== end.getUTCMonth() || start.getUTCFullYear() !== end.getUTCFullYear()) {
+    ctx.addIssue({ code: "custom", path: ["end_date"], message: "Timeline cannot span multiple months." });
+  }
 
-    if (days < 7) {
-      ctx.addIssue({ code: "custom", path: ["end_date"], message: "Timeline must be at least 7 days long." });
-    }
+  if (days < 7) {
+    ctx.addIssue({ code: "custom", path: ["end_date"], message: "Timeline must be at least 7 days long." });
+  }
 
-    if (days > 31) {
-      ctx.addIssue({ code: "custom", path: ["end_date"], message: "Timeline cannot exceed 31 days." });
-    }
-  });
+  if (days > 31) {
+    ctx.addIssue({ code: "custom", path: ["end_date"], message: "Timeline cannot exceed 31 days." });
+  }
+});
 
 export const orgConfigPatchSchema = organisationConfigEntitySchema
   .pick({
@@ -135,14 +132,13 @@ export const createObjectiveRequestSchema = z.object({
   month: monthSchema
 });
 
-export const updateObjectiveRequestSchema = z
-  .object({
-    category: z.enum(["RC", "CO", "OE", "OTHERS"]).optional(),
-    title: z.string().trim().min(1).max(255).optional(),
-    description: z.string().trim().optional(),
-    weightage: z.number().finite().min(0).max(100).optional(),
-    version: versionSchema
-  });
+export const updateObjectiveRequestSchema = z.object({
+  category: z.enum(["RC", "CO", "OE", "OTHERS"]).optional(),
+  title: z.string().trim().min(1).max(255).optional(),
+  description: z.string().trim().optional(),
+  weightage: z.number().finite().min(0).max(100).optional(),
+  version: versionSchema
+});
 
 export const reopenObjectiveRequestSchema = z.object({
   reason: reasonSchema,
@@ -156,15 +152,13 @@ export const objectiveAutoSplitRequestSchema = z.object({
 });
 
 export const objectiveWeightageBatchRequestSchema = z.object({
-  objectives: z
-    .array(
-      z.object({
-        id: uuidSchema,
-        weightage: z.number().finite().min(0).max(100),
-        version: versionSchema
-      })
-    )
-    .min(1)
+  objectives: z.array(
+    z.object({
+      id: uuidSchema,
+      weightage: z.number().finite().min(0).max(100),
+      version: versionSchema
+    })
+  ).min(1)
 });
 
 export const duplicateObjectiveRequestSchema = z.object({
@@ -212,27 +206,24 @@ export const createKpiRequestSchema = baseKpiCreateSchema.superRefine((value, ct
   }
 });
 
-export const updateKpiRequestSchema = z
-  .object({
-    title: z.string().trim().min(1).max(255).optional(),
-    description: z.string().trim().optional(),
-    unit: z.string().trim().max(50).optional(),
-    standard: z.number().finite().optional(),
-    target: z.number().finite().optional(),
-    weightage: z.number().finite().min(0).max(100).optional(),
-    version: versionSchema
-  });
+export const updateKpiRequestSchema = z.object({
+  title: z.string().trim().min(1).max(255).optional(),
+  description: z.string().trim().optional(),
+  unit: z.string().trim().max(50).optional(),
+  standard: z.number().finite().optional(),
+  target: z.number().finite().optional(),
+  weightage: z.number().finite().min(0).max(100).optional(),
+  version: versionSchema
+});
 
 export const kpiWeightageBatchRequestSchema = z.object({
-  kpis: z
-    .array(
-      z.object({
-        id: uuidSchema,
-        weightage: z.number().finite().min(0).max(100),
-        version: versionSchema
-      })
-    )
-    .min(1)
+  kpis: z.array(
+    z.object({
+      id: uuidSchema,
+      weightage: z.number().finite().min(0).max(100),
+      version: versionSchema
+    })
+  ).min(1)
 });
 
 export const saveKpiCycleDraftRequestSchema = z.object({
@@ -325,15 +316,13 @@ export const cloneObjectivesBulkRequestSchema = z.object({
   source_fiscal_year: fiscalYearSchema,
   source_month: monthSchema,
   objective_ids: z.array(uuidSchema).min(1),
-  targets: z
-    .array(
-      z.object({
-        employee_id: uuidSchema,
-        fiscal_year: fiscalYearSchema,
-        month: monthSchema
-      })
-    )
-    .min(1)
+  targets: z.array(
+    z.object({
+      employee_id: uuidSchema,
+      fiscal_year: fiscalYearSchema,
+      month: monthSchema
+    })
+  ).min(1)
 });
 
 export const moveObjectivesBulkRequestSchema = z.object({

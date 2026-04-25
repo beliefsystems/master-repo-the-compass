@@ -15,8 +15,8 @@ import {
   KPI_CYCLE_TRANSITIONS,
   OBJECTIVE_TRANSITIONS,
   resolveForceCloseState
-} from "./state-machines.js";
-import { AppError, StateTransitionError } from "./errors.js";
+} from "../../src/lib/server/core/state-machines.js";
+import { AppError, StateTransitionError } from "../../src/lib/server/core/errors.js";
 
 describe("state machines", () => {
   it("allows and blocks objective transitions exactly", () => {
@@ -71,5 +71,11 @@ describe("state machines", () => {
       forceClosed: true,
       actualValue: null
     });
+  });
+
+  it("rejects force-close on terminal states (APPROVED, LOCKED, CANCELLED_BY_SYSTEM)", () => {
+    expect(() => resolveForceCloseState("APPROVED")).toThrow(AppError);
+    expect(() => resolveForceCloseState("LOCKED")).toThrow(AppError);
+    expect(() => resolveForceCloseState("CANCELLED_BY_SYSTEM")).toThrow(AppError);
   });
 });

@@ -6,13 +6,13 @@
  * CONSTRAINTS ENFORCED: Correct input rejection, cumulative KPI rules, timeline checks, canonical HTTP statuses.
  */
 import { describe, expect, it } from "vitest";
-import { APP_ERROR_REGISTRY, ValidationAppError } from "../errors.js";
+import { APP_ERROR_REGISTRY, ValidationAppError } from "../../src/lib/server/core/errors.js";
 import {
   createKpiRequestSchema,
   kpiTimelineRequestSchema,
   parseWithAppError,
   submitPmsReviewRequestSchema
-} from "./index.js";
+} from "../../src/lib/server/validation/index.js";
 
 describe("validation", () => {
   it("rejects invalid cumulative KPI payloads", () => {

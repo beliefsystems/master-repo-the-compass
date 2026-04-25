@@ -18,8 +18,8 @@ import {
   KPI_STATES,
   KPI_SUBMISSION_STATES,
   KPI_TARGET_TYPES,
-  MIN_COMMENT_LENGTH,
   MAX_COMMENT_LENGTH,
+  MIN_COMMENT_LENGTH,
   NOTIFICATION_STATUSES,
   OBJECTIVE_CATEGORIES,
   OBJECTIVE_STATES,
@@ -29,7 +29,7 @@ import {
   REVIEW_SENTIMENTS,
   SYSTEM_EVENT_TYPES,
   USER_ROLES
-} from "../constants.js";
+} from "../core/constants.js";
 
 export const uuidSchema = z.string().uuid();
 export const positiveIntSchema = z.number().int().positive();

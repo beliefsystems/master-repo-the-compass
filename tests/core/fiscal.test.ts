@@ -13,8 +13,8 @@ import {
   getMonthsForCadencePeriod,
   getQuarterForMonth,
   resolveFiscalMonthIndex
-} from "./fiscal.js";
-import { AppError } from "./errors.js";
+} from "../../src/lib/server/core/fiscal.js";
+import { AppError } from "../../src/lib/server/core/errors.js";
 
 describe("fiscal helpers", () => {
   it("maps months into fiscal order for APRIL and JANUARY years", () => {

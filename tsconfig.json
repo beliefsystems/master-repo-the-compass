@@ -1,19 +1,25 @@
 {
+  "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
+    "allowJs": true,
+    "checkJs": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "moduleResolution": "Bundler",
-    "strict": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "skipLibCheck": true,
     "resolveJsonModule": true,
-    "noEmit": true,
-    "types": ["node", "vitest/globals"],
-    "baseUrl": ".",
-    "paths": {
-      "$lib/*": ["src/lib/*"]
-    }
+    "skipLibCheck": true,
+    "strict": true,
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["src/**/*.ts", "vitest.config.ts"]
+  "include": [
+    "src/**/*.d.ts",
+    "src/**/*.ts",
+    "src/**/*.js",
+    "src/**/*.svelte",
+    "tests/**/*.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "drizzle.config.ts",
+    "scripts/**/*.ts"
+  ]
 }

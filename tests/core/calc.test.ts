@@ -14,8 +14,9 @@ import {
   computeObjectivePercent,
   computeOea,
   computeOem,
+  deriveKpiStatus,
   derivePmsRating
-} from "./calc.js";
+} from "../../src/lib/server/core/calc.js";
 
 describe("calc engine", () => {
   it("computes cycle percent for increase, decrease, and control metrics", () => {
@@ -78,9 +79,35 @@ describe("calc engine", () => {
     ).toBe(60);
   });
 
-  it("applies auto-split and PMS rating derivation rules", () => {
+  it("returns null OEM for force-closed months with all-NULL objectives (SSoT §26.6)", () => {
+    // All objectives have null percent → OEM should be null regardless of forceClosed flag
+    expect(
+      computeOem(
+        [
+          { weightage: 50, percent: null },
+          { weightage: 50, percent: null }
+        ],
+        true
+      )
+    ).toBeNull();
+
+    // Mixed: at least one non-null → OEM should be computed
+    expect(
+      computeOem(
+        [
+          { weightage: 50, percent: 80 },
+          { weightage: 50, percent: null }
+        ],
+        true
+      )
+    ).toBe(40);
+  });
+
+  it("applies auto-split and status/rating derivation rules", () => {
     expect(autoSplitWeights(3)).toEqual([33.33, 33.33, 33.34]);
     expect(derivePmsRating(95)).toBe("Meets Expectations");
+    expect(deriveKpiStatus(null)).toBe("NOT_STARTED");
+    expect(deriveKpiStatus(55)).toBe("AT_RISK");
   });
 
   it("computes hall of fame rankings with eligibility and tie-breaks", () => {

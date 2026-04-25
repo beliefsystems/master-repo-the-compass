@@ -1,12 +1,12 @@
 /**
  * PURPOSE: Verify the authoritative V1 schema surface, constraints, and export boundaries.
- * CONNECTIONS: Covers schema/index exports and PostgreSQL-specific helpers from the iron core.
+ * CONNECTIONS: Covers the single schema entrypoint and PostgreSQL-specific helpers from the iron core.
  * LAYER: Tests
  * SSOT REFERENCES: Part 24, Part 30
  * CONSTRAINTS ENFORCED: V1-only schema, version/deleted_at presence, no-overlap SQL helper retained.
  */
 import { describe, expect, it } from "vitest";
-import * as schema from "./index.js";
+import * as schema from "../../src/lib/server/db/schema.js";
 
 describe("schema", () => {
   it("exports all V1 tables and omits the deferred V2 KPI library table", () => {
