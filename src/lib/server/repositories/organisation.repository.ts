@@ -7,8 +7,8 @@
  */
 import { eq } from "drizzle-orm";
 import { db } from "$lib/server/db/client";
-import { organisation, organisationConfig } from "$lib/server/db/schema";
-import { ORGANISATION_ID } from "./base.js";
+import { organisation, organisationConfig } from "$lib/server/db/foundation-schema";
+import { ORG_ID_CONSTANT } from "./base.js";
 
 export async function getCurrentOrganisationRecord() {
   const [record] = await db
@@ -23,7 +23,7 @@ export async function getCurrentOrganisationRecord() {
     })
     .from(organisation)
     .leftJoin(organisationConfig, eq(organisationConfig.organisationId, organisation.id))
-    .where(eq(organisation.id, ORGANISATION_ID))
+    .where(eq(organisation.id, ORG_ID_CONSTANT))
     .limit(1);
 
   return record ?? null;

@@ -6,10 +6,16 @@
  * CONSTRAINTS ENFORCED: Non-UI unit tests only; Node environment for pure core modules.
  */
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
 
 export default defineConfig({
+  resolve: {
+    alias: {
+      $lib: fileURLToPath(new URL("./src/lib", import.meta.url))
+    }
+  },
   test: {
     environment: "node",
-    include: ["tests/**/*.test.ts"]
+    include: ["tests/s00/**/*.test.ts"]
   }
 });

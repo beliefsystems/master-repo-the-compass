@@ -11,12 +11,17 @@ declare global {
       session: {
         id: string;
         userId: string;
+        token: string;
         expiresAt: Date;
       } | null;
       user: {
         id: string;
         email: string;
-        name: string;
+        username: string;
+        fullName: string;
+        role: "ADMIN" | "MANAGER" | "EMPLOYEE";
+        executiveLabel: boolean;
+        status: "ACTIVE" | "DEACTIVATED";
       } | null;
     }
     interface PageData {

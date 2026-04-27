@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { authClient } from "$lib/auth-client";
-
   let { data } = $props();
 
   async function handleSignOut() {
-    await authClient.signOut();
+    await fetch("/api/v1/auth/logout", {
+      method: "POST"
+    });
     window.location.href = "/login";
   }
 </script>

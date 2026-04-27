@@ -7,27 +7,21 @@
  */
 import { json } from "@sveltejs/kit";
 import { getCurrentOrganisation } from "$lib/server/services/organisation.service";
+import { handleError, requireAuth } from "$lib/server/utils/response.js";
 
 export const GET = async ({ locals }) => {
-  if (!locals.session) {
-    return json(
-      {
-        error: {
-          code: "SESSION_EXPIRED",
-          message: "Session expired."
-        }
-      },
-      { status: 401 }
-    );
+  try {
+    requireAuth(locals);
+    const organisation = await getCurrentOrganisation();
+
+    return json({
+      id: organisation.id,
+      name: organisation.name,
+      fiscal_year_start: organisation.fiscalYearStart,
+      timezone: organisation.timezone,
+      status: organisation.status
+    });
+  } catch (error) {
+    return handleError(error);
   }
-
-  const organisation = await getCurrentOrganisation();
-
-  return json({
-    id: organisation.id,
-    name: organisation.name,
-    fiscal_year_start: organisation.fiscalYearStart,
-    timezone: organisation.timezone,
-    status: organisation.status
-  });
 };

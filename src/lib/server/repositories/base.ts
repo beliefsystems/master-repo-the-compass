@@ -8,12 +8,12 @@
 import { and, eq, isNull, type SQL, type AnyColumn } from "drizzle-orm";
 import { env } from "../env.js";
 
-export const ORGANISATION_ID = env.APP_ORGANISATION_ID;
+export const ORG_ID_CONSTANT = env.APP_ORGANISATION_ID;
 
 export function withOrganisationScope(organisationColumn: AnyColumn, deletedAtColumn?: AnyColumn | null): SQL<unknown> {
   if (deletedAtColumn) {
-    return and(eq(organisationColumn, ORGANISATION_ID), isNull(deletedAtColumn)) as SQL<unknown>;
+    return and(eq(organisationColumn, ORG_ID_CONSTANT), isNull(deletedAtColumn)) as SQL<unknown>;
   }
 
-  return eq(organisationColumn, ORGANISATION_ID);
+  return eq(organisationColumn, ORG_ID_CONSTANT);
 }

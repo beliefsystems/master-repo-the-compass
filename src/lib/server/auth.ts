@@ -10,6 +10,8 @@
  * The svelteKitHandler in hooks.server.ts handles cookie management natively.
  */
 import { betterAuth } from "better-auth";
+import { sveltekitCookies } from "better-auth/svelte-kit";
+import { getRequestEvent } from "$app/server";
 import { env } from "./env.js";
 import { pool } from "./db/client.js";
 
@@ -17,6 +19,7 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
   database: pool,
+  plugins: [sveltekitCookies(getRequestEvent)],
   emailAndPassword: {
     enabled: true
   },

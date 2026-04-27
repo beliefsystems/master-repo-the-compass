@@ -13,13 +13,13 @@ import { drizzle } from "drizzle-orm/node-postgres";
 import { sql } from "drizzle-orm";
 import pg from "pg";
 import { betterAuth } from "better-auth";
-import * as schema from "../src/lib/server/db/schema.js";
+import * as schema from "../src/lib/server/db/foundation-schema.js";
 
 config();
 
 const DATABASE_URL = process.env.DATABASE_URL ?? "postgresql://postgres:postgres@localhost:5432/the_compass";
 const BETTER_AUTH_SECRET = process.env.BETTER_AUTH_SECRET ?? "";
-const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
+const BETTER_AUTH_URL = process.env.BETTER_AUTH_URL ?? "http://localhost:5173";
 const APP_ORGANISATION_ID = process.env.APP_ORGANISATION_ID ?? "";
 const DEV_ADMIN_EMAIL = process.env.DEV_ADMIN_EMAIL ?? "";
 const DEV_ADMIN_PASSWORD = process.env.DEV_ADMIN_PASSWORD ?? "";
@@ -91,7 +91,7 @@ async function seed() {
 
     if (!existingAppUser.rows?.length) {
       console.log("Creating app users record...");
-      await db.insert(schema.users).values({
+      const [appUser] = await db.insert(schema.users).values({
         organisationId: APP_ORGANISATION_ID,
         fullName: "Compass Admin",
         role: "ADMIN",
@@ -100,7 +100,17 @@ async function seed() {
         username: "admin",
         passwordHash: "managed-by-better-auth",
         status: "ACTIVE"
-      }).onConflictDoNothing();
+      }).onConflictDoNothing().returning();
+
+      if (appUser) {
+        await db.insert(schema.employees).values({
+          organisationId: APP_ORGANISATION_ID,
+          userId: appUser.id,
+          fullName: "Compass Admin",
+          employeeCode: "ADMIN-001",
+          status: "ACTIVE"
+        }).onConflictDoNothing();
+      }
     } else {
       console.log("App users record already exists, skipping.");
     }

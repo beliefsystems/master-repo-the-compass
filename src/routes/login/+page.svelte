@@ -25,14 +25,14 @@
         </p>
 
         <form method="POST" class="mt-8 space-y-4">
-          <label class="block text-sm font-medium text-slate-700" for="email">Email</label>
+          <label class="block text-sm font-medium text-slate-700" for="email">Email or username</label>
           <input
             class="clay-input w-full px-4 py-3 text-base text-slate-800"
             id="email"
             name="email"
-            type="email"
+            type="text"
             value={form?.values?.email ?? ""}
-            autocomplete="email"
+            autocomplete="username"
             required
           />
 

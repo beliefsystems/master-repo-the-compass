@@ -6,7 +6,7 @@
  * CONSTRAINTS ENFORCED: Minimal login flow only; no signup/reset/profile features in Slice 0.
  */
 import { fail, redirect } from "@sveltejs/kit";
-import { auth } from "$lib/server/auth";
+import { loginWithPassword } from "$lib/server/services/auth.service.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 export const load: PageServerLoad = async ({ locals }) => {
@@ -31,11 +31,9 @@ export const actions: Actions = {
     }
 
     try {
-      await auth.api.signInEmail({
-        body: {
-          email,
-          password
-        },
+      await loginWithPassword({
+        usernameOrEmail: email,
+        password,
         headers: event.request.headers
       });
     } catch {
