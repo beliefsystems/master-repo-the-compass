@@ -106,8 +106,8 @@ describe("calc engine", () => {
   it("applies auto-split and status/rating derivation rules", () => {
     expect(autoSplitWeights(3)).toEqual([33.33, 33.33, 33.34]);
     expect(derivePmsRating(95)).toBe("Meets Expectations");
-    expect(deriveKpiStatus(null)).toBe("NOT_STARTED");
-    expect(deriveKpiStatus(55)).toBe("AT_RISK");
+    expect(deriveKpiStatus(null)).toBe("NO_DATA");
+    expect(deriveKpiStatus(55)).toBe("At Risk");
   });
 
   it("computes hall of fame rankings with eligibility and tie-breaks", () => {

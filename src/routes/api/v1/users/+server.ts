@@ -4,10 +4,17 @@ import { createUserRequestSchema, parseWithValidationError } from "$lib/server/v
 import { handleError, requireAuth } from "$lib/server/utils/response.js";
 import { getReusableResponse, persistResponse } from "$lib/server/services/idempotency.service.js";
 
-export const GET = async ({ locals }) => {
+export const GET = async ({ locals, url }) => {
   try {
     const actor = requireAuth(locals);
-    const users = await getUsers(actor);
+    const limit = Math.min(Number(url.searchParams.get("limit") ?? 50), 100);
+    const users = await getUsers(actor, {
+      cursor: url.searchParams.get("cursor") ?? undefined,
+      limit: Number.isFinite(limit) ? limit : 50,
+      status: (url.searchParams.get("status") as "ACTIVE" | "DEACTIVATED" | null) ?? undefined,
+      role: (url.searchParams.get("role") as "ADMIN" | "MANAGER" | "EMPLOYEE" | null) ?? undefined,
+      search: url.searchParams.get("search") ?? undefined
+    });
     return json({ items: users });
   } catch (error) {
     return handleError(error);

@@ -10,6 +10,8 @@ import type { ApiFieldError } from "../../shared/types/index.js";
 export const APP_ERROR_CODES = [
   "VALIDATION_FAILED",
   "USER_NOT_FOUND",
+  "EMPLOYEE_NOT_FOUND",
+  "OBJECTIVE_NOT_FOUND",
   "WEIGHTAGE_SUM_INVALID",
   "TARGET_EQUALS_STANDARD",
   "CONTROL_STANDARD_EXCEEDS_TARGET",
@@ -58,6 +60,8 @@ export interface AppErrorDefinition {
 export const APP_ERROR_REGISTRY: Record<AppErrorCode, AppErrorDefinition> = {
   VALIDATION_FAILED: { httpStatus: 400, message: "Validation failed." },
   USER_NOT_FOUND: { httpStatus: 404, message: "User not found." },
+  EMPLOYEE_NOT_FOUND: { httpStatus: 404, message: "Employee not found." },
+  OBJECTIVE_NOT_FOUND: { httpStatus: 404, message: "Objective not found." },
   WEIGHTAGE_SUM_INVALID: { httpStatus: 400, message: "Weightage does not sum to 100." },
   TARGET_EQUALS_STANDARD: { httpStatus: 400, message: "KPI target equals standard." },
   CONTROL_STANDARD_EXCEEDS_TARGET: { httpStatus: 400, message: "CONTROL KPI standard exceeds target." },

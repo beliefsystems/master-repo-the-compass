@@ -2,6 +2,7 @@ import {
   boolean,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   text,
@@ -20,12 +21,17 @@ export const organisationStatusEnum = pgEnum("organisation_status", ["ACTIVE", "
 export const userRoleEnum = pgEnum("user_role", ["ADMIN", "MANAGER", "EMPLOYEE"]);
 export const userStatusEnum = pgEnum("user_status", ["ACTIVE", "DEACTIVATED"]);
 export const employeeStatusEnum = pgEnum("employee_status", ["ACTIVE", "DEACTIVATED"]);
+export const objectiveStatusEnum = pgEnum("objective_status", ["LAUNCHED", "ONGOING", "COMPLETED", "DELETED"]);
 export const sessionStatusEnum = pgEnum("session_status", ["ACTIVE", "EXPIRED", "REVOKED"]);
 export const systemEventTypeEnum = pgEnum("system_event_type", [
   "USER_CREATED",
   "USER_UPDATED",
   "USER_DEACTIVATED",
   "USER_RESTORED",
+  "EMPLOYEE_CREATED",
+  "EMPLOYEE_UPDATED",
+  "EMPLOYEE_DEACTIVATED",
+  "EMPLOYEE_RESTORED",
   "SESSION_REVOKED",
   "CONFIG_UPDATED",
   "ORG_UPDATED"
@@ -126,6 +132,22 @@ export const employees = pgTable(
   })
 );
 
+export const objectives = pgTable("objectives", {
+  id: uuid("id").primaryKey().default(genRandomUuid()),
+  organisationId: uuid("organisation_id").notNull().references(() => organisation.id),
+  employeeId: uuid("employee_id").notNull().references(() => employees.id),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  month: integer("month").notNull(),
+  fiscalYear: integer("fiscal_year").notNull(),
+  weightage: numeric("weightage", { precision: 5, scale: 2, mode: "number" }).notNull(),
+  status: objectiveStatusEnum("status").notNull().default("LAUNCHED"),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().default(now()),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().default(now()),
+  version: integer("version").notNull().default(1)
+});
+
 export const sessions = pgTable(
   "sessions",
   {
@@ -174,10 +196,15 @@ export const systemEvents = pgTable("system_events", {
 });
 
 export type Organisation = typeof organisation.$inferSelect;
+export type NewOrganisation = typeof organisation.$inferInsert;
 export type OrganisationConfig = typeof organisationConfig.$inferSelect;
+export type NewOrganisationConfig = typeof organisationConfig.$inferInsert;
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Employee = typeof employees.$inferSelect;
+export type NewEmployee = typeof employees.$inferInsert;
+export type Objective = typeof objectives.$inferSelect;
+export type NewObjective = typeof objectives.$inferInsert;
 export type Session = typeof sessions.$inferSelect;
 export type IdempotencyRecord = typeof idempotencyRecords.$inferSelect;
 export type SystemEvent = typeof systemEvents.$inferSelect;

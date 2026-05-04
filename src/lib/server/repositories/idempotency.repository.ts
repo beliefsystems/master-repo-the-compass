@@ -25,6 +25,25 @@ export async function findReusableIdempotentResponse(input: {
   return record ?? null;
 }
 
+export async function findActiveIdempotentResponseByKey(input: {
+  userId: string;
+  idempotencyKey: string;
+}) {
+  const [record] = await db
+    .select()
+    .from(idempotencyRecords)
+    .where(
+      and(
+        eq(idempotencyRecords.userId, input.userId),
+        eq(idempotencyRecords.idempotencyKey, input.idempotencyKey),
+        gt(idempotencyRecords.expiresAt, new Date())
+      )
+    )
+    .limit(1);
+
+  return record ?? null;
+}
+
 export async function saveIdempotentResponse(input: {
   userId: string;
   idempotencyKey: string;

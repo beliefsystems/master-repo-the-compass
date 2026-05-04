@@ -1,7 +1,7 @@
 import { and, eq, gt } from "drizzle-orm";
 import { db } from "$lib/server/db/client";
 import { sessions } from "$lib/server/db/foundation-schema";
-import { ORG_ID_CONSTANT } from "./base.js";
+import { ORG_ID_CONSTANT, type DatabaseExecutor } from "./base.js";
 
 export async function upsertSession(input: {
   userId: string;
@@ -62,8 +62,8 @@ export async function touchSession(sessionToken: string) {
   return record ?? null;
 }
 
-export async function revokeSessionByToken(sessionToken: string) {
-  const [record] = await db
+export async function revokeSessionByToken(sessionToken: string, client: DatabaseExecutor = db) {
+  const [record] = await client
     .update(sessions)
     .set({
       status: "REVOKED",

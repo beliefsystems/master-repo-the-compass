@@ -10,6 +10,7 @@ describe("S00 foundation schema", () => {
     expect(schema.sessions).toBeDefined();
     expect(schema.idempotencyRecords).toBeDefined();
     expect(schema.systemEvents).toBeDefined();
+    expect(schema.objectives).toBeDefined();
     expect((schema as Record<string, unknown>).kpis).toBeUndefined();
   });
 
@@ -17,5 +18,6 @@ describe("S00 foundation schema", () => {
     expect("deletedAt" in schema.organisation).toBe(false);
     expect(schema.users.deletedAt).toBeDefined();
     expect(schema.employees.deletedAt).toBeDefined();
+    expect(schema.objectives.deletedAt).toBeDefined();
   });
 });

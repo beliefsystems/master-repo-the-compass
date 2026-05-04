@@ -25,6 +25,162 @@ import type {
   WeightedPercentInput
 } from "../../shared/types/index.js";
 
+export type MetricType = "INCREASE" | "DECREASE" | "CONTROL" | "CUMULATIVE";
+export type AggregationMethod = "SUM" | "AVERAGE";
+
+export interface MetricDefinition {
+  metricType: MetricType;
+  base: number;
+  standard?: number | null;
+  target: number;
+  aggregationMethod?: AggregationMethod;
+}
+
+export interface MetricCalculationInput extends MetricDefinition {
+  actual: number | null;
+}
+
+export interface CumulativeInput extends MetricDefinition {
+  actuals: Array<number | null>;
+}
+
+export interface CalculationResult {
+  percent: number | null;
+  status: "NO_DATA" | "BELOW_STANDARD" | "IN_RANGE" | "OUT_OF_RANGE" | "SCORED";
+}
+
+export interface StatusBand {
+  min: number;
+  max: number | null;
+  label: string;
+}
+
+export interface RatingBand {
+  min: number;
+  max: number | null;
+  label: string;
+}
+
+function roundPercent(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+function failMetricValidation(field: string, message: string): never {
+  throw createAppError("VALIDATION_FAILED", {
+    fields: [{ field, message }]
+  });
+}
+
+export function validateMetricDefinition(definition: MetricDefinition): void {
+  const { metricType, base, standard, target } = definition;
+
+  if (!Number.isFinite(base)) failMetricValidation("base", "Base must be a finite number.");
+  if (!Number.isFinite(target)) failMetricValidation("target", "Target must be a finite number.");
+  if (standard !== undefined && standard !== null && !Number.isFinite(standard)) {
+    failMetricValidation("standard", "Standard must be a finite number when provided.");
+  }
+
+  switch (metricType) {
+    case "INCREASE":
+    case "CUMULATIVE":
+      if (base >= target) failMetricValidation("target", `${metricType} requires base to be less than target.`);
+      if (standard !== undefined && standard !== null && !(base < standard && standard < target)) {
+        failMetricValidation("standard", `${metricType} standard must be greater than base and less than target.`);
+      }
+      return;
+    case "DECREASE":
+      if (base <= target) failMetricValidation("target", "DECREASE requires base to be greater than target.");
+      if (standard !== undefined && standard !== null && !(base > standard && standard > target)) {
+        failMetricValidation("standard", "DECREASE standard must be less than base and greater than target.");
+      }
+      return;
+    case "CONTROL": {
+      if (base === target) failMetricValidation("target", "CONTROL base and target must not be equal.");
+      if (standard !== undefined && standard !== null) {
+        const low = Math.min(base, target);
+        const high = Math.max(base, target);
+        if (standard < 0 || standard >= (high - low) / 2) {
+          failMetricValidation("standard", "CONTROL standard must be a non-negative tightening distance smaller than half the band.");
+        }
+      }
+      return;
+    }
+    default:
+      failMetricValidation("metricType", "Unsupported metric type.");
+  }
+}
+
+export function calculateMetricPercent(input: MetricCalculationInput): CalculationResult {
+  validateMetricDefinition(input);
+
+  if (input.actual === null) {
+    return { percent: null, status: "NO_DATA" };
+  }
+
+  const { metricType, base, standard, target, actual } = input;
+
+  if (metricType === "INCREASE") {
+    if (standard !== undefined && standard !== null && actual < standard) return { percent: 0, status: "BELOW_STANDARD" };
+    if ((standard === undefined || standard === null) && actual <= base) return { percent: 0, status: "BELOW_STANDARD" };
+    return { percent: roundPercent(((actual - base) / (target - base)) * 100), status: "SCORED" };
+  }
+
+  if (metricType === "DECREASE") {
+    if (standard !== undefined && standard !== null && actual > standard) return { percent: 0, status: "BELOW_STANDARD" };
+    if ((standard === undefined || standard === null) && actual >= base) return { percent: 0, status: "BELOW_STANDARD" };
+    return { percent: roundPercent(((base - actual) / (base - target)) * 100), status: "SCORED" };
+  }
+
+  if (metricType === "CONTROL") {
+    const low = Math.min(base, target);
+    const high = Math.max(base, target);
+    const qualifiedLow = standard === undefined || standard === null ? low : low + standard;
+    const qualifiedHigh = standard === undefined || standard === null ? high : high - standard;
+    const inRange = actual >= qualifiedLow && actual <= qualifiedHigh;
+    return { percent: inRange ? 100 : 0, status: inRange ? "IN_RANGE" : "OUT_OF_RANGE" };
+  }
+
+  return calculateCumulativePercent({ ...input, actuals: [actual] });
+}
+
+export function calculateCumulativePercent(input: CumulativeInput): CalculationResult & { runningTotal: number | null } {
+  validateMetricDefinition({ ...input, metricType: "CUMULATIVE" });
+
+  for (const actual of input.actuals) {
+    if (actual !== null && actual < 0) {
+      failMetricValidation("actuals", "CUMULATIVE increments cannot be negative.");
+    }
+  }
+
+  const values = input.actuals.filter((actual): actual is number => actual !== null);
+  if (values.length === 0) {
+    return { percent: null, runningTotal: null, status: "NO_DATA" };
+  }
+
+  const runningTotal = values.reduce((sum, actual) => sum + actual, 0);
+  if (input.standard !== undefined && input.standard !== null && runningTotal < input.standard) {
+    return { percent: 0, runningTotal, status: "BELOW_STANDARD" };
+  }
+  if ((input.standard === undefined || input.standard === null) && runningTotal <= input.base) {
+    return { percent: 0, runningTotal, status: "BELOW_STANDARD" };
+  }
+
+  return {
+    percent: roundPercent(((runningTotal - input.base) / (input.target - input.base)) * 100),
+    runningTotal,
+    status: "SCORED"
+  };
+}
+
+export function calculateWeightedScore(items: Array<{ percent: number | null; weightage: number }>): number | null {
+  const scoredItems = items.filter((item) => item.percent !== null);
+  if (scoredItems.length === 0) {
+    return null;
+  }
+
+  return roundPercent(scoredItems.reduce((sum, item) => sum + (Number(item.percent) * item.weightage) / 100, 0));
+}
+
 function requireValidIncreaseDecreaseTarget(standard: number, target: number) {
   if (target === standard) {
     throw createAppError("TARGET_EQUALS_STANDARD");
@@ -202,37 +358,41 @@ export function autoSplitWeights(count: number): number[] {
   return allWeights;
 }
 
-export function deriveKpiStatus(
-  score: number | null,
-  bands: KpiStatusBands = DEFAULT_KPI_STATUS_BANDS
-): "NOT_STARTED" | "AT_RISK" | "OFF_TRACK" | "ON_TRACK" | "ACHIEVED" {
-  if (score === null) {
-    return "NOT_STARTED";
+export function autoSplitWeightage(count: number): number[] {
+  if (!Number.isInteger(count) || count <= 0) {
+    failMetricValidation("count", "Count must be a positive integer.");
   }
 
-  const orderedBands = Object.entries(bands).sort(([, a], [, b]) => a.min - b.min);
-  const matched = orderedBands.find(([, band]) => score >= band.min && (band.max === null || score <= band.max));
-  switch (matched?.[0]) {
-    case "at_risk":
-      return "AT_RISK";
-    case "off_track":
-      return "OFF_TRACK";
-    case "on_track":
-      return "ON_TRACK";
-    case "achieved":
-      return "ACHIEVED";
-    default:
-      return "NOT_STARTED";
-  }
+  return autoSplitWeights(count);
 }
 
-export function derivePmsRating(score: number | null, bands: PmsRatingBands = [...DEFAULT_PMS_RATING_BANDS]): string | null {
+function normalizeStatusBands(bands: StatusBand[] | KpiStatusBands): StatusBand[] {
+  return Array.isArray(bands)
+    ? bands
+    : Object.values(bands).map((band) => ({
+        min: band.min,
+        max: band.max,
+        label: band.label
+      }));
+}
+
+export function deriveKpiStatus(
+  score: number | null,
+  bands: StatusBand[] | KpiStatusBands = DEFAULT_KPI_STATUS_BANDS
+): string {
+  if (score === null) {
+    return "NO_DATA";
+  }
+
+  return normalizeStatusBands(bands).find((band) => score >= band.min && (band.max === null || score <= band.max))?.label ?? "NO_DATA";
+}
+
+export function derivePmsRating(score: number | null, bands: RatingBand[] | PmsRatingBands = [...DEFAULT_PMS_RATING_BANDS]): string | null {
   if (score === null) {
     return null;
   }
 
-  const orderedBands = [...bands].sort((a, b) => b.min - a.min);
-  return orderedBands.find((band) => score >= band.min && (band.max === null || score <= band.max))?.label ?? null;
+  return [...bands].find((band) => score >= band.min && (band.max === null || score <= band.max))?.label ?? null;
 }
 
 export function computeHallOfFameRankings(employees: HallOfFameEmployee[]): HallOfFameResult {

@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1777534697074,
+      "tag": "0000_slippery_eternals",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1777546850000,
+      "tag": "0001_employee_audit_events",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777862900000,
+      "tag": "0002_objectives",
+      "breakpoints": true
+    }
+  ]
+}

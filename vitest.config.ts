@@ -16,6 +16,15 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/s00/**/*.test.ts"]
+    include: [
+      "tests/s00/**/*.test.ts",
+      "tests/s-calc/**/*.test.ts",
+      "tests/s01/**/*.test.ts",
+      "tests/s02/**/*.test.ts",
+      "tests/s03/**/*.test.ts",
+      "tests/routes/**/*.test.ts",
+      "tests/core/**/*.test.ts",
+      "tests/schema/**/*.test.ts"
+    ]
   }
 });

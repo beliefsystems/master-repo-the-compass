@@ -64,7 +64,6 @@ coverage/
 # ----------------------------
 # Drizzle / DB Artifacts
 # ----------------------------
-drizzle/
 *.sqlite
 *.db
 
@@ -144,7 +143,6 @@ coverage/
 # ----------------------------
 # Drizzle / DB Artifacts
 # ----------------------------
-drizzle/
 *.sqlite
 *.db
 

@@ -1,7 +1,7 @@
 import { json } from "@sveltejs/kit";
 import { AppError, createAppError } from "./errors.js";
 
-export function handleError(error: unknown) {
+export function handleError(error: unknown, context?: { method?: string; path?: string }) {
   if (error instanceof AppError) {
     return json(
       {
@@ -15,6 +15,12 @@ export function handleError(error: unknown) {
       { status: error.httpStatus }
     );
   }
+
+  console.error("Unhandled server error", {
+    method: context?.method,
+    path: context?.path,
+    error
+  });
 
   const fallback = createAppError("INTERNAL_SERVER_ERROR");
   return json(

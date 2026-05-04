@@ -6,21 +6,63 @@
  * CONSTRAINTS ENFORCED: Auth required, no client-provided organisation_id, no business logic in the route.
  */
 import { json } from "@sveltejs/kit";
-import { getCurrentOrganisation } from "$lib/server/services/organisation.service";
+import { getOrganisation, updateOrganisation } from "$lib/server/services/organisation.service";
+import { getReusableResponse, persistResponse } from "$lib/server/services/idempotency.service.js";
+import { parseWithValidationError, updateOrganisationRequestSchema } from "$lib/server/validation/foundation.js";
 import { handleError, requireAuth } from "$lib/server/utils/response.js";
+
+function serializeOrganisation(organisation: Awaited<ReturnType<typeof getOrganisation>>) {
+  return {
+    id: organisation.id,
+    name: organisation.name,
+    fiscalYearStart: organisation.fiscalYearStart,
+    timezone: organisation.timezone,
+    status: organisation.status,
+    version: organisation.version
+  };
+}
 
 export const GET = async ({ locals }) => {
   try {
-    requireAuth(locals);
-    const organisation = await getCurrentOrganisation();
+    const actor = requireAuth(locals);
+    const organisation = await getOrganisation(actor);
 
-    return json({
-      id: organisation.id,
-      name: organisation.name,
-      fiscal_year_start: organisation.fiscalYearStart,
-      timezone: organisation.timezone,
-      status: organisation.status
+    return json(serializeOrganisation(organisation));
+  } catch (error) {
+    return handleError(error);
+  }
+};
+
+export const PATCH = async ({ request, locals, url }) => {
+  try {
+    const actor = requireAuth(locals);
+    const idempotencyKey = request.headers.get("Idempotency-Key");
+    const reusable = await getReusableResponse({
+      userId: actor.id,
+      idempotencyKey,
+      endpoint: url.pathname,
+      method: "PATCH"
     });
+
+    if (reusable) {
+      return json(reusable.responseBody, { status: reusable.responseStatus });
+    }
+
+    const body = await request.json();
+    const parsed = parseWithValidationError(updateOrganisationRequestSchema, body);
+    const result = await updateOrganisation(actor, parsed);
+    const responseBody = serializeOrganisation(result);
+
+    await persistResponse({
+      userId: actor.id,
+      idempotencyKey,
+      endpoint: url.pathname,
+      method: "PATCH",
+      responseStatus: 200,
+      responseBody
+    });
+
+    return json(responseBody);
   } catch (error) {
     return handleError(error);
   }

@@ -1,11 +1,13 @@
 import { writeSystemEvent } from "$lib/server/repositories/system-event.repository.js";
+import type { DatabaseExecutor } from "$lib/server/repositories/base.js";
+import type { SystemEvent } from "$lib/server/db/foundation-schema.js";
 
 export async function recordSystemEvent(input: {
   actorUserId: string;
-  eventType: "USER_CREATED" | "USER_UPDATED" | "USER_DEACTIVATED" | "USER_RESTORED" | "SESSION_REVOKED" | "CONFIG_UPDATED" | "ORG_UPDATED";
+  eventType: SystemEvent["eventType"];
   entityType: string;
   entityId?: string | null;
   metadata?: Record<string, unknown> | null;
-}) {
-  return writeSystemEvent(input);
+}, client?: DatabaseExecutor) {
+  return writeSystemEvent(input, client);
 }

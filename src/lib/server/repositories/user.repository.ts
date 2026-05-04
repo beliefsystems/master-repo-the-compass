@@ -1,7 +1,7 @@
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, asc, count, eq, gt, ilike, isNull, or } from "drizzle-orm";
 import { db } from "$lib/server/db/client";
 import { users, type NewUser } from "$lib/server/db/foundation-schema";
-import { ORG_ID_CONSTANT } from "./base.js";
+import { ORG_ID_CONSTANT, type DatabaseExecutor } from "./base.js";
 
 export async function findUserById(userId: string) {
   const [record] = await db
@@ -49,7 +49,24 @@ export async function findUserByUsernameOrEmail(usernameOrEmail: string) {
   return record ?? null;
 }
 
-export async function listUsers() {
+export interface UserListFilters {
+  cursor?: string;
+  limit?: number;
+  status?: "ACTIVE" | "DEACTIVATED";
+  role?: "ADMIN" | "MANAGER" | "EMPLOYEE";
+  search?: string;
+}
+
+export async function listUsers(filters: UserListFilters = {}) {
+  const conditions = [eq(users.organisationId, ORG_ID_CONSTANT), isNull(users.deletedAt)];
+  if (filters.cursor) conditions.push(gt(users.id, filters.cursor));
+  if (filters.status) conditions.push(eq(users.status, filters.status));
+  if (filters.role) conditions.push(eq(users.role, filters.role));
+  if (filters.search) {
+    const term = `%${filters.search}%`;
+    conditions.push(or(ilike(users.fullName, term), ilike(users.email, term), ilike(users.username, term))!);
+  }
+
   return db
     .select({
       id: users.id,
@@ -63,11 +80,30 @@ export async function listUsers() {
       createdAt: users.createdAt
     })
     .from(users)
-    .where(and(eq(users.organisationId, ORG_ID_CONSTANT), isNull(users.deletedAt)));
+    .where(and(...conditions))
+    .orderBy(asc(users.id))
+    .limit(filters.limit ?? 50);
 }
 
-export async function createUser(input: Omit<NewUser, "organisationId">) {
+export async function countActiveWritableAdmins() {
   const [record] = await db
+    .select({ count: count() })
+    .from(users)
+    .where(
+      and(
+        eq(users.organisationId, ORG_ID_CONSTANT),
+        isNull(users.deletedAt),
+        eq(users.role, "ADMIN"),
+        eq(users.status, "ACTIVE"),
+        eq(users.executiveLabel, false)
+      )
+    );
+
+  return Number(record?.count ?? 0);
+}
+
+export async function createUser(input: Omit<NewUser, "organisationId">, client: DatabaseExecutor = db) {
+  const [record] = await client
     .insert(users)
     .values({
       ...input,
@@ -81,9 +117,10 @@ export async function createUser(input: Omit<NewUser, "organisationId">) {
 export async function updateUser(
   userId: string,
   patch: Partial<Pick<NewUser, "fullName" | "email" | "username" | "role" | "status" | "executiveLabel" | "passwordHash">>,
-  expectedVersion: number
+  expectedVersion: number,
+  client: DatabaseExecutor = db
 ) {
-  const [record] = await db
+  const [record] = await client
     .update(users)
     .set({
       ...patch,
@@ -103,8 +140,8 @@ export async function updateUser(
   return record ?? null;
 }
 
-export async function softDeleteUser(userId: string, expectedVersion: number) {
-  const [record] = await db
+export async function softDeleteUser(userId: string, expectedVersion: number, client: DatabaseExecutor = db) {
+  const [record] = await client
     .update(users)
     .set({
       status: "DEACTIVATED",
@@ -125,8 +162,8 @@ export async function softDeleteUser(userId: string, expectedVersion: number) {
   return record ?? null;
 }
 
-export async function restoreUser(userId: string, expectedVersion: number) {
-  const [record] = await db
+export async function restoreUser(userId: string, expectedVersion: number, client: DatabaseExecutor = db) {
+  const [record] = await client
     .update(users)
     .set({
       status: "ACTIVE",

@@ -1,4 +1,5 @@
 import { auth } from "$lib/server/auth";
+import { db } from "$lib/server/db/client";
 import { createAppError } from "$lib/server/utils/errors.js";
 import { findUserByEmail, findUserByUsernameOrEmail } from "$lib/server/repositories/user.repository.js";
 import { findActiveSessionByToken, revokeSessionByToken, touchSession, upsertSession } from "$lib/server/repositories/session.repository.js";
@@ -72,18 +73,20 @@ export async function logout(headers: Headers) {
   });
 
   const appUser = await findUserByEmail(authSession.user.email);
-  await revokeSessionByToken(authSession.session.token);
+  await db.transaction(async (tx) => {
+    await revokeSessionByToken(authSession.session.token, tx);
 
-  if (appUser) {
-    await recordSystemEvent({
-      actorUserId: appUser.id,
-      eventType: "SESSION_REVOKED",
-      entityType: "session",
-      metadata: {
-        token: authSession.session.token
-      }
-    });
-  }
+    if (appUser) {
+      await recordSystemEvent({
+        actorUserId: appUser.id,
+        eventType: "SESSION_REVOKED",
+        entityType: "session",
+        metadata: {
+          token: authSession.session.token
+        }
+      }, tx);
+    }
+  });
 }
 
 export async function resolveLocals(headers: Headers) {
@@ -115,7 +118,10 @@ export async function resolveLocals(headers: Headers) {
       expiresAt: authSession.session.expiresAt
     });
   } else {
-    await touchSession(authSession.session.token);
+    const touchThreshold = new Date(Date.now() - 5 * 60 * 1000);
+    if (appSession.lastSeenAt < touchThreshold) {
+      await touchSession(authSession.session.token);
+    }
   }
 
   return {

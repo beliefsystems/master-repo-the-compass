@@ -1,15 +1,15 @@
 import { db } from "$lib/server/db/client";
-import { systemEvents } from "$lib/server/db/foundation-schema";
-import { ORG_ID_CONSTANT } from "./base.js";
+import { systemEvents, type SystemEvent } from "$lib/server/db/foundation-schema";
+import { ORG_ID_CONSTANT, type DatabaseExecutor } from "./base.js";
 
 export async function writeSystemEvent(input: {
   actorUserId: string;
-  eventType: "USER_CREATED" | "USER_UPDATED" | "USER_DEACTIVATED" | "USER_RESTORED" | "SESSION_REVOKED" | "CONFIG_UPDATED" | "ORG_UPDATED";
+  eventType: SystemEvent["eventType"];
   entityType: string;
   entityId?: string | null;
   metadata?: Record<string, unknown> | null;
-}) {
-  const [record] = await db
+}, client: DatabaseExecutor = db) {
+  const [record] = await client
     .insert(systemEvents)
     .values({
       organisationId: ORG_ID_CONSTANT,

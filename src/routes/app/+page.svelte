@@ -15,9 +15,20 @@
       <p class="text-sm font-semibold uppercase tracking-[0.24em] text-slate-500">Protected Shell</p>
       <h1 class="mt-2 font-[var(--font-serif)] text-4xl text-slate-800">Runtime verification</h1>
     </div>
-    <button class="clay-button bg-[var(--secondary)] px-4 py-3 text-sm font-semibold text-slate-800" onclick={handleSignOut}>
-      Sign out
-    </button>
+    <div class="flex flex-wrap items-center gap-3">
+      <a class="clay-button bg-[var(--secondary)] px-4 py-3 text-sm font-semibold text-slate-800" href="/app/settings">
+        Settings
+      </a>
+      <a class="clay-button bg-[var(--secondary)] px-4 py-3 text-sm font-semibold text-slate-800" href="/app/people">
+        People
+      </a>
+      <a class="clay-button bg-[var(--secondary)] px-4 py-3 text-sm font-semibold text-slate-800" href="/app/objectives">
+        Objectives
+      </a>
+      <button class="clay-button bg-[var(--secondary)] px-4 py-3 text-sm font-semibold text-slate-800" onclick={handleSignOut}>
+        Sign out
+      </button>
+    </div>
   </header>
 
   <section class="clay-card p-6">

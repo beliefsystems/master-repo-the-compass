@@ -1,0 +1,10 @@
+name: New Environment
+values:
+  - key: base_url
+    value: ''
+  - key: user_id
+    value: ''
+  - key: employee_id
+    value: ''
+  - key: objective_id
+    value: ''

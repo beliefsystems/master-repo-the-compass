@@ -6,9 +6,12 @@
  * CONSTRAINTS ENFORCED: All repository queries are scoped by the server-owned organisation_id constant.
  */
 import { and, eq, isNull, type SQL, type AnyColumn } from "drizzle-orm";
+import type { db } from "../db/client.js";
 import { env } from "../env.js";
 
 export const ORG_ID_CONSTANT = env.APP_ORGANISATION_ID;
+
+export type DatabaseExecutor = Pick<typeof db, "insert" | "select" | "update">;
 
 export function withOrganisationScope(organisationColumn: AnyColumn, deletedAtColumn?: AnyColumn | null): SQL<unknown> {
   if (deletedAtColumn) {
